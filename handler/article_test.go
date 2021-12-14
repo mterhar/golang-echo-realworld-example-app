@@ -8,10 +8,10 @@ import (
 	"testing"
 
 	"github.com/labstack/echo/v4"
+	"github.com/mterhar/golang-echo-realworld-example-app/router"
+	"github.com/mterhar/golang-echo-realworld-example-app/router/middleware"
+	"github.com/mterhar/golang-echo-realworld-example-app/utils"
 	"github.com/stretchr/testify/assert"
-	"github.com/xesina/golang-echo-realworld-example-app/router"
-	"github.com/xesina/golang-echo-realworld-example-app/router/middleware"
-	"github.com/xesina/golang-echo-realworld-example-app/utils"
 )
 
 func TestListArticlesCaseSuccess(t *testing.T) {

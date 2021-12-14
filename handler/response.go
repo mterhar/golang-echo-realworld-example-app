@@ -3,10 +3,10 @@ package handler
 import (
 	"time"
 
-	"github.com/xesina/golang-echo-realworld-example-app/model"
-	"github.com/xesina/golang-echo-realworld-example-app/user"
-	"github.com/xesina/golang-echo-realworld-example-app/utils"
 	"github.com/labstack/echo/v4"
+	"github.com/mterhar/golang-echo-realworld-example-app/model"
+	"github.com/mterhar/golang-echo-realworld-example-app/user"
+	"github.com/mterhar/golang-echo-realworld-example-app/utils"
 )
 
 type userResponse struct {
