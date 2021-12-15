@@ -11,8 +11,7 @@ If this was serious and it was worth the time:
 1. Create a [custom `gorm` logger](https://gorm.io/docs/logger.html#Customize-Logger) that sends child spans
 1. Instrument comments like articles
 1. Use beeline's error unpacking
-
-
+1. Add `user.email` to traces via middleware rather than endpoints
 
 # ![RealWorld Example App](logo.png)
 

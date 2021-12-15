@@ -100,7 +100,7 @@ type articleCreateRequest struct {
 		Title       string   `json:"title" validate:"required"`
 		Description string   `json:"description" validate:"required"`
 		Body        string   `json:"body" validate:"required"`
-		Tags        []string `json:"tagList, omitempty"`
+		Tags        []string `json:"tagList,omitempty"`
 	} `json:"article"`
 }
 
