@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/dgrijalva/jwt-go"
+	"github.com/honeycombio/beeline-go"
 	"github.com/labstack/echo/v4"
 	"github.com/mterhar/golang-echo-realworld-example-app/utils"
 )
@@ -37,6 +38,7 @@ func JWTWithConfig(config JWTConfig) echo.MiddlewareFunc {
 			if err != nil {
 				if config.Skipper != nil {
 					if config.Skipper(c) {
+						beeline.AddFieldToTrace(c.Request().Context(), "anonymous", "true")
 						return next(c)
 					}
 				}
@@ -53,6 +55,7 @@ func JWTWithConfig(config JWTConfig) echo.MiddlewareFunc {
 			}
 			if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
 				userID := uint(claims["id"].(float64))
+				beeline.AddFieldToTrace(c.Request().Context(), "userID", userID)
 				c.Set("user", userID)
 				return next(c)
 			}

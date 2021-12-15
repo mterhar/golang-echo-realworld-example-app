@@ -3,6 +3,7 @@ package handler
 import (
 	"net/http"
 
+	"github.com/honeycombio/beeline-go"
 	"github.com/labstack/echo/v4"
 	"github.com/mterhar/golang-echo-realworld-example-app/model"
 	"github.com/mterhar/golang-echo-realworld-example-app/utils"
@@ -89,6 +90,7 @@ func (h *Handler) CurrentUser(c echo.Context) error {
 	if u == nil {
 		return c.JSON(http.StatusNotFound, utils.NotFound())
 	}
+	beeline.AddField(c.Request().Context(), "user.email", u.Email)
 	return c.JSON(http.StatusOK, newUserResponse(u))
 }
 
@@ -124,6 +126,7 @@ func (h *Handler) UpdateUser(c echo.Context) error {
 	if err := h.userStore.Update(u); err != nil {
 		return c.JSON(http.StatusUnprocessableEntity, utils.NewError(err))
 	}
+	beeline.AddField(c.Request().Context(), "user.email.new", u.Email)
 	return c.JSON(http.StatusOK, newUserResponse(u))
 }
 

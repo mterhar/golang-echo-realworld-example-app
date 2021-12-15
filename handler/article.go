@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/honeycombio/beeline-go"
 	"github.com/labstack/echo/v4"
 	"github.com/mterhar/golang-echo-realworld-example-app/model"
 	"github.com/mterhar/golang-echo-realworld-example-app/utils"
@@ -23,6 +24,8 @@ import (
 // @Failure 500 {object} utils.Error
 // @Router /articles/{slug} [get]
 func (h *Handler) GetArticle(c echo.Context) error {
+	ctx, span := beeline.StartSpan(c.Request().Context(), "getArticle")
+
 	slug := c.Param("slug")
 	a, err := h.articleStore.GetBySlug(slug)
 
@@ -33,7 +36,8 @@ func (h *Handler) GetArticle(c echo.Context) error {
 	if a == nil {
 		return c.JSON(http.StatusNotFound, utils.NotFound())
 	}
-
+	beeline.AddField(ctx, "articles.get.slug", slug)
+	span.Send()
 	return c.JSON(http.StatusOK, newArticleResponse(c, a))
 }
 
@@ -57,6 +61,9 @@ func (h *Handler) Articles(c echo.Context) error {
 		articles []model.Article
 		count    int
 	)
+	// don't like that I duplicated ctx
+	ctx, span := beeline.StartSpan(c.Request().Context(), "listArticles")
+	// defer span.Send()
 
 	tag := c.QueryParam("tag")
 	author := c.QueryParam("author")
@@ -72,28 +79,37 @@ func (h *Handler) Articles(c echo.Context) error {
 		limit = 20
 	}
 
+	beeline.AddField(ctx, "articles.filter.offset", offset)
+	beeline.AddField(ctx, "articles.filter.limit", limit)
+
 	if tag != "" {
+		beeline.AddField(ctx, "articles.filter.tag", tag)
 		articles, count, err = h.articleStore.ListByTag(tag, offset, limit)
 		if err != nil {
 			return c.JSON(http.StatusInternalServerError, nil)
 		}
 	} else if author != "" {
+		beeline.AddField(ctx, "articles.filter.author", author)
 		articles, count, err = h.articleStore.ListByAuthor(author, offset, limit)
 		if err != nil {
 			return c.JSON(http.StatusInternalServerError, nil)
 		}
 	} else if favoritedBy != "" {
+		beeline.AddField(ctx, "articles.filter.favorited", favoritedBy)
 		articles, count, err = h.articleStore.ListByWhoFavorited(favoritedBy, offset, limit)
 		if err != nil {
 			return c.JSON(http.StatusInternalServerError, nil)
 		}
 	} else {
+		beeline.AddField(ctx, "articles.filter.none", "true")
 		articles, count, err = h.articleStore.List(offset, limit)
 		if err != nil {
 			return c.JSON(http.StatusInternalServerError, nil)
 		}
 	}
 
+	beeline.AddField(ctx, "articles.result.count", count)
+	span.Send()
 	return c.JSON(http.StatusOK, newArticleListResponse(h.userStore, userIDFromToken(c), articles, count))
 }
 
@@ -116,6 +132,7 @@ func (h *Handler) Feed(c echo.Context) error {
 		articles []model.Article
 		count    int
 	)
+	ctx, span := beeline.StartSpan(c.Request().Context(), "articleFeed")
 
 	offset, err := strconv.Atoi(c.QueryParam("offset"))
 	if err != nil {
@@ -131,7 +148,11 @@ func (h *Handler) Feed(c echo.Context) error {
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, nil)
 	}
+	beeline.AddField(ctx, "articles.feed.offset", offset)
+	beeline.AddField(ctx, "articles.feed.limit", limit)
+	beeline.AddField(ctx, "articles.feed.count", count)
 
+	span.Send()
 	return c.JSON(http.StatusOK, newArticleListResponse(h.userStore, userIDFromToken(c), articles, count))
 }
 
@@ -151,6 +172,7 @@ func (h *Handler) Feed(c echo.Context) error {
 // @Router /articles [post]
 func (h *Handler) CreateArticle(c echo.Context) error {
 	var a model.Article
+	ctx, span := beeline.StartSpan(c.Request().Context(), "newArticle")
 
 	req := &articleCreateRequest{}
 	if err := req.bind(c, &a); err != nil {
@@ -163,7 +185,11 @@ func (h *Handler) CreateArticle(c echo.Context) error {
 	if err != nil {
 		return c.JSON(http.StatusUnprocessableEntity, utils.NewError(err))
 	}
-
+	beeline.AddField(ctx, "articles.new.slug", a.Slug)
+	beeline.AddField(ctx, "articles.new.body_bytes", len(a.Body))
+	beeline.AddField(ctx, "articles.new.tags", len(a.Tags))
+	beeline.AddField(ctx, "articles.new.author_id", a.AuthorID)
+	span.Send()
 	return c.JSON(http.StatusCreated, newArticleResponse(c, &a))
 }
 
@@ -186,6 +212,7 @@ func (h *Handler) CreateArticle(c echo.Context) error {
 // @Router /articles/{slug} [put]
 func (h *Handler) UpdateArticle(c echo.Context) error {
 	slug := c.Param("slug")
+	ctx, span := beeline.StartSpan(c.Request().Context(), "updateArticle")
 
 	a, err := h.articleStore.GetUserArticleBySlug(userIDFromToken(c), slug)
 	if err != nil {
@@ -206,6 +233,12 @@ func (h *Handler) UpdateArticle(c echo.Context) error {
 	if err = h.articleStore.UpdateArticle(a, req.Article.Tags); err != nil {
 		return c.JSON(http.StatusInternalServerError, utils.NewError(err))
 	}
+
+	beeline.AddField(ctx, "articles.update.slug", a.Slug)
+	beeline.AddField(ctx, "articles.update.body_bytes", len(a.Body))
+	beeline.AddField(ctx, "articles.update.tags", len(a.Tags))
+	beeline.AddField(ctx, "articles.update.author_id", a.AuthorID)
+	span.Send()
 
 	return c.JSON(http.StatusOK, newArticleResponse(c, a))
 }

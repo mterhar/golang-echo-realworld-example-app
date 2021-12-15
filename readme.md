@@ -1,3 +1,20 @@
+# Honeycomb take-home test
+
+Instrumenting Conduit backend.
+
+1. Auto-instrument Echo with the honeycomb wrapper
+1. Add some context like `user.email`
+1. Add child spans for articles
+1. 
+
+If this was serious and it was worth the time: 
+
+1. Create a [custom `gorm` logger](https://gorm.io/docs/logger.html#Customize-Logger) that sends child spans
+1. Instrument comments like articles
+1. 
+
+
+
 # ![RealWorld Example App](logo.png)
 
 > ### Golang/Echo codebase containing real world examples (CRUD, auth, advanced patterns, etc) that adheres to the [RealWorld](https://github.com/gothinkster/realworld) spec and API.

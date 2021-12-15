@@ -6,7 +6,7 @@ import (
 	"github.com/dgrijalva/jwt-go"
 )
 
-var JWTSecret = []byte("!!SECRET!!")
+var JWTSecret = []byte("!!TERCES!!")
 
 func GenerateJWT(id uint) string {
 	token := jwt.New(jwt.SigningMethodHS256)
