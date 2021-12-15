@@ -64,6 +64,7 @@ func (h *Handler) Login(c echo.Context) error {
 	if !u.CheckPassword(req.User.Password) {
 		return c.JSON(http.StatusForbidden, utils.AccessForbidden())
 	}
+	beeline.AddFieldToTrace(c.Request().Context(), "user.email", u.Email)
 	return c.JSON(http.StatusOK, newUserResponse(u))
 }
 
@@ -90,7 +91,7 @@ func (h *Handler) CurrentUser(c echo.Context) error {
 	if u == nil {
 		return c.JSON(http.StatusNotFound, utils.NotFound())
 	}
-	beeline.AddField(c.Request().Context(), "user.email", u.Email)
+	beeline.AddFieldToTrace(c.Request().Context(), "user.email", u.Email)
 	return c.JSON(http.StatusOK, newUserResponse(u))
 }
 
@@ -126,7 +127,7 @@ func (h *Handler) UpdateUser(c echo.Context) error {
 	if err := h.userStore.Update(u); err != nil {
 		return c.JSON(http.StatusUnprocessableEntity, utils.NewError(err))
 	}
-	beeline.AddField(c.Request().Context(), "user.email.new", u.Email)
+	beeline.AddFieldToTrace(c.Request().Context(), "user.email.new", u.Email)
 	return c.JSON(http.StatusOK, newUserResponse(u))
 }
 
@@ -155,6 +156,8 @@ func (h *Handler) GetProfile(c echo.Context) error {
 	if u == nil {
 		return c.JSON(http.StatusNotFound, utils.NotFound())
 	}
+	beeline.AddFieldToTrace(c.Request().Context(), "user.email", u.Email)
+
 	return c.JSON(http.StatusOK, newProfileResponse(h.userStore, userIDFromToken(c), u))
 }
 
@@ -176,6 +179,8 @@ func (h *Handler) GetProfile(c echo.Context) error {
 // @Router /profiles/{username}/follow [post]
 func (h *Handler) Follow(c echo.Context) error {
 	followerID := userIDFromToken(c)
+	f, _ := h.userStore.GetByID(followerID)
+
 	username := c.Param("username")
 	u, err := h.userStore.GetByUsername(username)
 	if err != nil {
@@ -187,6 +192,8 @@ func (h *Handler) Follow(c echo.Context) error {
 	if err := h.userStore.AddFollower(u, followerID); err != nil {
 		return c.JSON(http.StatusUnprocessableEntity, utils.NewError(err))
 	}
+	beeline.AddFieldToTrace(c.Request().Context(), "user.email", f.Email)
+
 	return c.JSON(http.StatusOK, newProfileResponse(h.userStore, userIDFromToken(c), u))
 }
 
@@ -208,6 +215,8 @@ func (h *Handler) Follow(c echo.Context) error {
 // @Router /profiles/{username}/follow [delete]
 func (h *Handler) Unfollow(c echo.Context) error {
 	followerID := userIDFromToken(c)
+	f, _ := h.userStore.GetByID(followerID)
+
 	username := c.Param("username")
 	u, err := h.userStore.GetByUsername(username)
 	if err != nil {
@@ -219,6 +228,8 @@ func (h *Handler) Unfollow(c echo.Context) error {
 	if err := h.userStore.RemoveFollower(u, followerID); err != nil {
 		return c.JSON(http.StatusUnprocessableEntity, utils.NewError(err))
 	}
+	beeline.AddFieldToTrace(c.Request().Context(), "user.email", f.Email)
+
 	return c.JSON(http.StatusOK, newProfileResponse(h.userStore, userIDFromToken(c), u))
 }
 

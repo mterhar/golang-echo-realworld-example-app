@@ -171,6 +171,12 @@ func (h *Handler) Feed(c echo.Context) error {
 // @Security ApiKeyAuth
 // @Router /articles [post]
 func (h *Handler) CreateArticle(c echo.Context) error {
+	u, err_anon := h.userStore.GetByID(userIDFromToken(c))
+	if err_anon != nil {
+		beeline.AddFieldToTrace(c.Request().Context(), "anonymous", "true")
+	} else {
+		beeline.AddFieldToTrace(c.Request().Context(), "user.email.new", u.Email)
+	}
 	var a model.Article
 	ctx, span := beeline.StartSpan(c.Request().Context(), "newArticle")
 
@@ -211,6 +217,12 @@ func (h *Handler) CreateArticle(c echo.Context) error {
 // @Security ApiKeyAuth
 // @Router /articles/{slug} [put]
 func (h *Handler) UpdateArticle(c echo.Context) error {
+	u, err_anon := h.userStore.GetByID(userIDFromToken(c))
+	if err_anon != nil {
+		beeline.AddFieldToTrace(c.Request().Context(), "anonymous", "true")
+	} else {
+		beeline.AddFieldToTrace(c.Request().Context(), "user.email.new", u.Email)
+	}
 	slug := c.Param("slug")
 	ctx, span := beeline.StartSpan(c.Request().Context(), "updateArticle")
 
@@ -258,6 +270,12 @@ func (h *Handler) UpdateArticle(c echo.Context) error {
 // @Security ApiKeyAuth
 // @Router /articles/{slug} [delete]
 func (h *Handler) DeleteArticle(c echo.Context) error {
+	u, err_anon := h.userStore.GetByID(userIDFromToken(c))
+	if err_anon != nil {
+		beeline.AddFieldToTrace(c.Request().Context(), "anonymous", "true")
+	} else {
+		beeline.AddFieldToTrace(c.Request().Context(), "user.email.new", u.Email)
+	}
 	slug := c.Param("slug")
 
 	a, err := h.articleStore.GetUserArticleBySlug(userIDFromToken(c), slug)
@@ -295,6 +313,13 @@ func (h *Handler) DeleteArticle(c echo.Context) error {
 // @Security ApiKeyAuth
 // @Router /articles/{slug}/comments [post]
 func (h *Handler) AddComment(c echo.Context) error {
+	u, err_anon := h.userStore.GetByID(userIDFromToken(c))
+	if err_anon != nil {
+		beeline.AddFieldToTrace(c.Request().Context(), "anonymous", "true")
+	} else {
+		beeline.AddFieldToTrace(c.Request().Context(), "user.email.new", u.Email)
+	}
+
 	slug := c.Param("slug")
 
 	a, err := h.articleStore.GetBySlug(slug)
@@ -333,6 +358,13 @@ func (h *Handler) AddComment(c echo.Context) error {
 // @Failure 500 {object} utils.Error
 // @Router /articles/{slug}/comments [get]
 func (h *Handler) GetComments(c echo.Context) error {
+	u, err_anon := h.userStore.GetByID(userIDFromToken(c))
+	if err_anon != nil {
+		beeline.AddFieldToTrace(c.Request().Context(), "anonymous", "true")
+	} else {
+		beeline.AddFieldToTrace(c.Request().Context(), "user.email.new", u.Email)
+	}
+
 	slug := c.Param("slug")
 
 	cm, err := h.articleStore.GetCommentsBySlug(slug)
@@ -361,6 +393,13 @@ func (h *Handler) GetComments(c echo.Context) error {
 // @Security ApiKeyAuth
 // @Router /articles/{slug}/comments/{id} [delete]
 func (h *Handler) DeleteComment(c echo.Context) error {
+	u, err_anon := h.userStore.GetByID(userIDFromToken(c))
+	if err_anon != nil {
+		beeline.AddFieldToTrace(c.Request().Context(), "anonymous", "true")
+	} else {
+		beeline.AddFieldToTrace(c.Request().Context(), "user.email.new", u.Email)
+	}
+
 	id64, err := strconv.ParseUint(c.Param("id"), 10, 32)
 	id := uint(id64)
 
@@ -377,7 +416,7 @@ func (h *Handler) DeleteComment(c echo.Context) error {
 		return c.JSON(http.StatusNotFound, utils.NotFound())
 	}
 
-	if cm.UserID != userIDFromToken(c) {
+	if cm.UserID != u.ID {
 		return c.JSON(http.StatusUnauthorized, utils.NewError(errors.New("unauthorized action")))
 	}
 
@@ -405,6 +444,13 @@ func (h *Handler) DeleteComment(c echo.Context) error {
 // @Security ApiKeyAuth
 // @Router /articles/{slug}/favorite [post]
 func (h *Handler) Favorite(c echo.Context) error {
+	u, err_anon := h.userStore.GetByID(userIDFromToken(c))
+	if err_anon != nil {
+		beeline.AddFieldToTrace(c.Request().Context(), "anonymous", "true")
+	} else {
+		beeline.AddFieldToTrace(c.Request().Context(), "user.email.new", u.Email)
+	}
+
 	slug := c.Param("slug")
 	a, err := h.articleStore.GetBySlug(slug)
 
@@ -416,7 +462,7 @@ func (h *Handler) Favorite(c echo.Context) error {
 		return c.JSON(http.StatusNotFound, utils.NotFound())
 	}
 
-	if err := h.articleStore.AddFavorite(a, userIDFromToken(c)); err != nil {
+	if err := h.articleStore.AddFavorite(a, u.ID); err != nil {
 		return c.JSON(http.StatusUnprocessableEntity, utils.NewError(err))
 	}
 
@@ -440,6 +486,13 @@ func (h *Handler) Favorite(c echo.Context) error {
 // @Security ApiKeyAuth
 // @Router /articles/{slug}/favorite [delete]
 func (h *Handler) Unfavorite(c echo.Context) error {
+	u, err_anon := h.userStore.GetByID(userIDFromToken(c))
+	if err_anon != nil {
+		beeline.AddFieldToTrace(c.Request().Context(), "anonymous", "true")
+	} else {
+		beeline.AddFieldToTrace(c.Request().Context(), "user.email.new", u.Email)
+	}
+
 	slug := c.Param("slug")
 
 	a, err := h.articleStore.GetBySlug(slug)
@@ -451,7 +504,7 @@ func (h *Handler) Unfavorite(c echo.Context) error {
 		return c.JSON(http.StatusNotFound, utils.NotFound())
 	}
 
-	if err := h.articleStore.RemoveFavorite(a, userIDFromToken(c)); err != nil {
+	if err := h.articleStore.RemoveFavorite(a, u.ID); err != nil {
 		return c.JSON(http.StatusUnprocessableEntity, utils.NewError(err))
 	}
 
@@ -473,6 +526,13 @@ func (h *Handler) Unfavorite(c echo.Context) error {
 // @Security ApiKeyAuth
 // @Router /tags [get]
 func (h *Handler) Tags(c echo.Context) error {
+	u, err_anon := h.userStore.GetByID(userIDFromToken(c))
+	if err_anon != nil {
+		beeline.AddFieldToTrace(c.Request().Context(), "anonymous", "true")
+	} else {
+		beeline.AddFieldToTrace(c.Request().Context(), "user.email.new", u.Email)
+	}
+
 	tags, err := h.articleStore.ListTags()
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, err)
